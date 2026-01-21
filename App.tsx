@@ -47,6 +47,7 @@ const App: React.FC = () => {
          />
          <div className="absolute inset-0 bg-primary-dark/60 mix-blend-multiply"></div>
       </div>
+      <div className="absolute inset-0 z-0 pointer-events-none hilton-tech-grid"></div>
 
       {renderStep()}
     </div>
