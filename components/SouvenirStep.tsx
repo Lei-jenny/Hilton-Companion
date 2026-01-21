@@ -51,14 +51,24 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
     const failedKey = `guest-companion:postcard-image-failed:${session.booking.orderId}`;
     localStorage.removeItem(failedKey);
 
-    const image = await generatePostcardImage(session.booking.hotelName, session.booking.location, session.travelStyle);
-    setPostcardImage(image);
-    setLoading(false);
-    if (image) {
-        await setImageCache(imageKey, image);
-    } else {
+    try {
+      const image = await generatePostcardImage(session.booking.hotelName, session.booking.location, session.travelStyle);
+      const cacheBusted = image && !image.startsWith('data:')
+        ? `${image}${image.includes('?') ? '&' : '?'}cb=${Date.now()}`
+        : image;
+      setPostcardImage(cacheBusted);
+      if (cacheBusted) {
+        await setImageCache(imageKey, cacheBusted);
+      } else {
         setImageFailed(true);
         localStorage.setItem(failedKey, '1');
+      }
+    } catch (error) {
+      console.error('Postcard regenerate failed:', error);
+      setImageFailed(true);
+      localStorage.setItem(failedKey, '1');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -222,7 +232,8 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
              <div className="flex flex-col sm:flex-row gap-3">
                  <button
                      onClick={handleRetryImage}
-                     className="w-full h-12 rounded-2xl border border-gold/40 text-primary-dark font-bold text-sm flex items-center justify-center gap-2 hover:bg-gold/10 transition-all"
+                     disabled={loading}
+                     className="w-full h-12 rounded-2xl border border-gold/40 text-primary-dark font-bold text-sm flex items-center justify-center gap-2 hover:bg-gold/10 transition-all disabled:opacity-50"
                  >
                      <span className="material-symbols-outlined text-sm">refresh</span>
                      <span>{postcardImage ? 'Regenerate Image' : 'Generate Image'}</span>
