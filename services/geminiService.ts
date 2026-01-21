@@ -38,8 +38,27 @@ const extractImageFromResponse = (response: any): string | null => {
   const inlineData = response?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData)?.inlineData;
   const imageBytes = inlineData?.data;
   const mimeType = inlineData?.mimeType || 'image/png';
+  if (imageBytes) {
+    return `data:${mimeType};base64,${imageBytes}`;
+  }
 
-  return imageBytes ? `data:${mimeType};base64,${imageBytes}` : null;
+  const directUrl = response?.images?.[0]?.url || response?.data?.[0]?.url;
+  if (directUrl) return directUrl;
+
+  const directData = response?.images?.[0]?.data || response?.data?.[0]?.b64_json || response?.data?.[0];
+  if (typeof directData === 'string') {
+    if (directData.startsWith('data:image/')) return directData;
+    return `data:image/png;base64,${directData}`;
+  }
+
+  const part = response?.candidates?.[0]?.content?.parts?.find((p: any) => p?.inlineData?.data || p?.fileData?.fileUri);
+  if (part?.fileData?.fileUri) return part.fileData.fileUri;
+  if (part?.inlineData?.data) {
+    const partMime = part.inlineData.mimeType || 'image/png';
+    return `data:${partMime};base64,${part.inlineData.data}`;
+  }
+
+  return null;
 };
 
 const generateImageFromPrompt = async (prompt: string): Promise<string | null> => {
@@ -211,11 +230,11 @@ export const generatePostcardImage = async (
     location: string,
     style: TravelStyle
 ): Promise<string | null> => {
-    if (!apiKey) return null;
+    if (!apiKey && !imageApiKey) {
+        return fetchBingImage(`${hotelName} ${location}`);
+    }
 
     try {
-        const client = getClient();
-        if (!client) return null;
         const prompt = `
             A realistic travel photo taken at ${hotelName} in ${location}.
             Style: ${style} traveler vibe, warm natural lighting, candid moment, modern luxury atmosphere.
@@ -224,10 +243,12 @@ export const generatePostcardImage = async (
             No text, no illustration, no watermarks.
         `;
 
-        return await generateImageFromPrompt(prompt);
+        const image = await generateImageFromPrompt(prompt);
+        if (image) return image;
+        return await fetchBingImage(`${hotelName} ${location}`);
     } catch (error) {
         console.error("Postcard Gen Error:", error);
-        return null;
+        return await fetchBingImage(`${hotelName} ${location}`);
     }
 }
 
