@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UserSession, Attraction } from '../types';
 import { MOCK_ATTRACTIONS } from '../services/mockService';
 import { generateConciergeInfo, chatWithConcierge, generateItinerary, generateAttractionImage, generateDynamicAttractions, fetchFallbackImageForQuery } from '../services/geminiService';
-import { getImageCache, setImageCache, deleteImageCache } from '../services/cacheService';
+import { getImageCache, setImageCache, deleteImageCache, estimateLocalStorageBytes, getImageCacheStats } from '../services/cacheService';
 import ReactMarkdown from 'react-markdown';
 
 interface DashboardStepProps {
@@ -68,6 +68,12 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
   useEffect(() => {
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
+
+    getImageCacheStats().then(stats => {
+      const localBytes = estimateLocalStorageBytes();
+      console.info('[Cache] IndexedDB images:', stats.count, 'items,', Math.round(stats.bytes / 1024), 'KB');
+      console.info('[Cache] localStorage:', Math.round(localBytes / 1024), 'KB');
+    });
 
     // 1. Initial Map Setup (Centered on Hotel)
     const baseMap = `https://maps.google.com/maps?q=${encodeURIComponent(session.booking.hotelName + " " + session.booking.location)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
