@@ -99,10 +99,11 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
   if (bookingData) {
     // Render Avatar Selection Phase
     return (
-      <div className="relative z-10 w-full max-w-[480px] glass-effect rounded-3xl shadow-soft overflow-hidden flex flex-col animate-fade-in p-8 hilton-outline">
+      <div className="relative z-10 w-full max-w-[480px] glass-effect hilton-glass rounded-3xl shadow-soft overflow-hidden flex flex-col animate-fade-in p-8 hilton-outline">
          <div className="flex flex-col items-center text-center mb-6">
             <h2 className="font-serif text-3xl text-primary-dark font-medium mb-2">Create Your Persona</h2>
             <p className="text-medium-gray text-sm">Select your travel style and avatar.</p>
+            <div className="hilton-gold-divider w-20 mt-4"></div>
          </div>
 
          <div className="grid grid-cols-4 gap-2 mb-6">
@@ -158,7 +159,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
                 <div className="flex flex-col gap-2 w-full">
                      <button 
                         onClick={handleGenerateAIAvatar}
-                    className="w-full py-3 border border-dashed border-primary/40 rounded-xl text-primary font-bold text-sm hover:bg-primary/5 flex items-center justify-center gap-2"
+                    className="w-full py-3 border border-dashed border-primary/40 rounded-xl text-primary font-bold text-sm hover:bg-primary/5 flex items-center justify-center gap-2 hilton-sheen"
                     >
                         <span className="material-symbols-outlined">auto_awesome</span>
                         <span>Generate with Nano Banana</span>
@@ -175,7 +176,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
         <button 
             onClick={handleStartJourney}
             disabled={isGenerating}
-            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 hilton-sheen"
         >
             <span>Enter Concierge</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -186,7 +187,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
 
   // Render Login Phase
   return (
-    <div className="relative z-10 w-full max-w-[480px] glass-effect rounded-3xl shadow-soft overflow-hidden flex flex-col animate-fade-in hilton-outline">
+    <div className="relative z-10 w-full max-w-[480px] glass-effect hilton-glass rounded-3xl shadow-soft overflow-hidden flex flex-col animate-fade-in hilton-outline">
       <div className="h-1.5 w-full bg-primary"></div>
       <div className="px-8 pt-8 pb-10 flex flex-col h-full">
         <div className="flex flex-col items-center text-center mb-8">
@@ -199,6 +200,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
           <p className="text-medium-gray text-sm font-medium">
             Enter your details to retrieve your booking
           </p>
+          <div className="hilton-gold-divider w-20 mt-5"></div>
         </div>
 
         <div className="space-y-5 mb-8">
@@ -283,7 +285,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
 
         <button 
           onClick={handleFindBooking}
-          className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group"
+          className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group hilton-sheen"
         >
           <span>Find Booking</span>
           <span className="material-symbols-outlined text-sm transition-transform duration-300 group-hover:translate-x-1">arrow_forward</span>
