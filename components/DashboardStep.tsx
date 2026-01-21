@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserSession, Attraction } from '../types';
 import { MOCK_ATTRACTIONS } from '../services/mockService';
-import { generateConciergeInfo, chatWithConcierge, generateItinerary, generateAttractionImage, generateDynamicAttractions, fetchBingImageForQuery } from '../services/geminiService';
+import { generateConciergeInfo, chatWithConcierge, generateItinerary, generateAttractionImage, generateDynamicAttractions, fetchFallbackImageForQuery } from '../services/geminiService';
 import { getImageCache, setImageCache, deleteImageCache } from '../services/cacheService';
 import ReactMarkdown from 'react-markdown';
 
@@ -179,10 +179,10 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
                 }
             }
 
-            const bingImage = await fetchBingImageForQuery(`${attr.name} ${attr.type}`);
-            if (bingImage && await validateImage(bingImage)) {
-                setGeneratedImages(prev => ({...prev, [attr.id]: bingImage}));
-                await setImageCache(cacheKey, bingImage);
+            const fallbackImage = await fetchFallbackImageForQuery(`${attr.name} ${attr.type}`);
+            if (fallbackImage && await validateImage(fallbackImage)) {
+                setGeneratedImages(prev => ({...prev, [attr.id]: fallbackImage}));
+                await setImageCache(cacheKey, fallbackImage);
                 localStorage.removeItem(cacheKey);
             } else {
                 setFailedImages(prev => ({...prev, [attr.id]: true}));
