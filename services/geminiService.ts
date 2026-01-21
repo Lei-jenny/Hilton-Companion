@@ -145,7 +145,7 @@ const fetchBingImage = async (query: string): Promise<string | null> => {
 
   const task = (async () => {
     try {
-      const url = `https://r.jina.ai/http://www.bing.com/images/search?q=${encodeURIComponent(query)}`;
+      const url = `https://r.jina.ai/http://www.bing.com/images/search?q=${encodeURIComponent(query)}&qft=+filterui:aspect-vertical`;
       const response = await fetch(url);
       if (!response.ok) {
         return null;
@@ -185,7 +185,7 @@ const fetchBingImage = async (query: string): Promise<string | null> => {
 };
 
 const fetchUnsplashImage = async (query: string): Promise<string | null> => {
-  return `https://source.unsplash.com/featured/800x800/?${encodeURIComponent(query)}`;
+  return `https://source.unsplash.com/featured/800x1200/?${encodeURIComponent(query)}`;
 };
 
 export const fetchFallbackImageForQuery = async (query: string): Promise<string | null> => {
@@ -262,6 +262,7 @@ export const generatePostcardImage = async (
             A realistic travel photo taken at ${hotelName} in ${location}.
             Style: ${style} traveler vibe, warm natural lighting, candid moment, modern luxury atmosphere.
             Include details like lobby ambiance or a scenic hotel exterior with people in the background.
+            Portrait orientation, vertical postcard format (4:6 aspect ratio).
             Photorealistic, high-end travel photography.
             No text, no illustration, no watermarks.
         `;
