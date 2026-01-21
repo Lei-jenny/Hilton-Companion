@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserSession, Attraction } from '../types';
 import { MOCK_ATTRACTIONS } from '../services/mockService';
-import { generateConciergeInfo, chatWithConcierge, generateItinerary, generateAttractionImage, generateDynamicAttractions } from '../services/geminiService';
-import { getImageCache, setImageCache } from '../services/cacheService';
+import { generateConciergeInfo, chatWithConcierge, generateItinerary, generateAttractionImage, generateDynamicAttractions, fetchBingImageForQuery } from '../services/geminiService';
+import { getImageCache, setImageCache, deleteImageCache } from '../services/cacheService';
 import ReactMarkdown from 'react-markdown';
 
 interface DashboardStepProps {
@@ -55,6 +55,15 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
   // Derived lists
   const nearbyAttractions = attractions.filter(a => a.category === 'Nearby').slice(0, 2);
   const popularAttractions = attractions.filter(a => a.category === 'Must-See').slice(0, 2);
+
+  const validateImage = (src: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+  };
 
   useEffect(() => {
     if (hasInitializedRef.current) return;
@@ -135,33 +144,62 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
                          continue;
                      }
                      failedRetryRef.current.add(retryKey);
-                 } else {
-                     setGeneratedImages(prev => ({...prev, [attr.id]: cached}));
-                     await setImageCache(cacheKey, cached);
-                     localStorage.removeItem(cacheKey);
-                      continue;
-                 }
+                } else {
+                    const cachedValid = await validateImage(cached);
+                    if (cachedValid) {
+                        setGeneratedImages(prev => ({...prev, [attr.id]: cached}));
+                        await setImageCache(cacheKey, cached);
+                        localStorage.removeItem(cacheKey);
+                        continue;
+                    }
+                    localStorage.removeItem(cacheKey);
+                }
              }
 
              const cachedImage = await getImageCache(cacheKey);
              if (cachedImage) {
-                 setGeneratedImages(prev => ({...prev, [attr.id]: cachedImage}));
-                 continue;
+                const cachedValid = await validateImage(cachedImage);
+                if (cachedValid) {
+                    setGeneratedImages(prev => ({...prev, [attr.id]: cachedImage}));
+                    continue;
+                }
+                await deleteImageCache(cacheKey);
              }
 
              imageRequestRef.current.add(attr.id);
              const img = await generateAttractionImage(attr.type, attr.name);
-             if (img) {
-                 setGeneratedImages(prev => ({...prev, [attr.id]: img}));
-                 await setImageCache(cacheKey, img);
-             } else {
-                 setFailedImages(prev => ({...prev, [attr.id]: true}));
-                 localStorage.setItem(cacheKey, 'FAILED');
-             }
+            if (img) {
+                const valid = await validateImage(img);
+                if (valid) {
+                    setGeneratedImages(prev => ({...prev, [attr.id]: img}));
+                    await setImageCache(cacheKey, img);
+                    continue;
+                }
+            }
+
+            const bingImage = await fetchBingImageForQuery(`${attr.name} ${attr.type}`);
+            if (bingImage && await validateImage(bingImage)) {
+                setGeneratedImages(prev => ({...prev, [attr.id]: bingImage}));
+                await setImageCache(cacheKey, bingImage);
+            } else {
+                setFailedImages(prev => ({...prev, [attr.id]: true}));
+                localStorage.setItem(cacheKey, 'FAILED');
+            }
         }
     };
     fetchImages();
   }, [attractions]);
+
+  const handleRefreshItinerary = async () => {
+    if (loadingItinerary) return;
+    setLoadingItinerary(true);
+    const cacheKey = `guest-companion:itinerary:${session.booking.orderId}:${session.travelStyle}`;
+    localStorage.removeItem(cacheKey);
+    const text = await generateItinerary(session.booking, session.travelStyle);
+    setItinerary(text);
+    setLoadingItinerary(false);
+    localStorage.setItem(cacheKey, text);
+  };
 
   const handleAttractionClick = async (attraction: Attraction) => {
     setSelectedAttraction(attraction);
@@ -475,11 +513,20 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
                      <span className="material-symbols-outlined text-[120px]">calendar_month</span>
                 </div>
                 <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-5">
+                    <div className="flex items-center justify-between gap-3 mb-5">
+                        <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gold">
                              <span className="material-symbols-outlined text-lg">auto_awesome</span>
                         </div>
                         <h3 className="font-serif text-xl font-medium">Your AI Itinerary</h3>
+                        </div>
+                        <button
+                            onClick={handleRefreshItinerary}
+                            disabled={loadingItinerary}
+                            className="text-xs font-bold uppercase tracking-wider text-gold/90 hover:text-gold transition-colors disabled:opacity-40"
+                        >
+                            Refresh
+                        </button>
                     </div>
                     {loadingItinerary ? (
                         <div className="space-y-4 opacity-50">
