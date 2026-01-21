@@ -134,16 +134,27 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
              if (imageRequestRef.current.has(attr.id)) continue;
 
              // Check local cache
-             const cacheKey = `guest-companion:attraction-image:${session.booking.location}:${attr.type}:${attr.name}`;
-             const cached = localStorage.getItem(cacheKey);
-             if (cached) {
-                 if (cached === 'FAILED') {
-                     const retryKey = `${session.booking.location}:${attr.type}:${attr.name}`;
-                     if (failedRetryRef.current.has(retryKey)) {
-                         setFailedImages(prev => ({...prev, [attr.id]: true}));
-                         continue;
-                     }
-                     failedRetryRef.current.add(retryKey);
+            const cacheKey = `guest-companion:attraction-image:${session.booking.location}:${attr.type}:${attr.name}`;
+
+            const cachedImage = await getImageCache(cacheKey);
+             if (cachedImage) {
+                const cachedValid = await validateImage(cachedImage);
+                if (cachedValid) {
+                    setGeneratedImages(prev => ({...prev, [attr.id]: cachedImage}));
+                    continue;
+                }
+                await deleteImageCache(cacheKey);
+             }
+
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                if (cached === 'FAILED') {
+                    const retryKey = `${session.booking.location}:${attr.type}:${attr.name}`;
+                    if (failedRetryRef.current.has(retryKey)) {
+                        setFailedImages(prev => ({...prev, [attr.id]: true}));
+                        continue;
+                    }
+                    failedRetryRef.current.add(retryKey);
                 } else {
                     const cachedValid = await validateImage(cached);
                     if (cachedValid) {
@@ -154,17 +165,7 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
                     }
                     localStorage.removeItem(cacheKey);
                 }
-             }
-
-             const cachedImage = await getImageCache(cacheKey);
-             if (cachedImage) {
-                const cachedValid = await validateImage(cachedImage);
-                if (cachedValid) {
-                    setGeneratedImages(prev => ({...prev, [attr.id]: cachedImage}));
-                    continue;
-                }
-                await deleteImageCache(cacheKey);
-             }
+            }
 
              imageRequestRef.current.add(attr.id);
              const img = await generateAttractionImage(attr.type, attr.name);
@@ -173,6 +174,7 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
                 if (valid) {
                     setGeneratedImages(prev => ({...prev, [attr.id]: img}));
                     await setImageCache(cacheKey, img);
+                    localStorage.removeItem(cacheKey);
                     continue;
                 }
             }
@@ -181,6 +183,7 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ session }) => {
             if (bingImage && await validateImage(bingImage)) {
                 setGeneratedImages(prev => ({...prev, [attr.id]: bingImage}));
                 await setImageCache(cacheKey, bingImage);
+                localStorage.removeItem(cacheKey);
             } else {
                 setFailedImages(prev => ({...prev, [attr.id]: true}));
                 localStorage.setItem(cacheKey, 'FAILED');
