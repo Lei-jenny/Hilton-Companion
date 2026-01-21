@@ -118,7 +118,7 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
         <main className="flex-1 flex flex-col items-center justify-center px-6 relative z-20 w-full no-scrollbar overflow-y-auto pb-20">
             
             {/* Full Image Card */}
-            <div className="relative w-full max-w-[340px] aspect-[4/6] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] rotate-[-2deg] transform-gpu mx-auto animate-float transition-all hover:scale-[1.02] hover:rotate-0 hover:z-50 duration-500 group rounded-[2rem] overflow-hidden bg-gray-900 ring-4 ring-white">
+            <div className="relative w-full max-w-[320px] sm:max-w-[360px] aspect-[3/4] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] rotate-[-2deg] transform-gpu mx-auto animate-float transition-all hover:scale-[1.02] hover:rotate-0 hover:z-50 duration-500 group rounded-[2rem] overflow-hidden bg-gray-900 ring-4 ring-white">
                 
                 {loading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-400 z-20">
