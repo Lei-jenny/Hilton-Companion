@@ -62,10 +62,6 @@ const extractImageFromResponse = (response: any): string | null => {
   return null;
 };
 
-export const fetchBingImageForQuery = async (query: string): Promise<string | null> => {
-  return fetchBingImage(query);
-};
-
 const generateImageFromPrompt = async (prompt: string): Promise<string | null> => {
   if (!imageApiKey) return null;
   const cacheKey = prompt.trim();
@@ -155,9 +151,21 @@ const fetchBingImage = async (query: string): Promise<string | null> => {
         return null;
       }
       const html = await response.text();
-      const match = html.match(/murl&quot;:&quot;([^&]+)&quot;/i) || html.match(/murl":"([^"]+)"/i);
-      if (match?.[1]) {
-        return decodeURIComponent(match[1]);
+      const decodeHtml = (value: string) => value
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+
+      const turlMatch = html.match(/turl&quot;:&quot;([^&]+)&quot;/i) || html.match(/turl":"([^"]+)"/i);
+      if (turlMatch?.[1]) {
+        return decodeURIComponent(decodeHtml(turlMatch[1]));
+      }
+
+      const murlMatch = html.match(/murl&quot;:&quot;([^&]+)&quot;/i) || html.match(/murl":"([^"]+)"/i);
+      if (murlMatch?.[1]) {
+        return decodeURIComponent(decodeHtml(murlMatch[1]));
       }
       return null;
     } catch (error) {
@@ -174,6 +182,16 @@ const fetchBingImage = async (query: string): Promise<string | null> => {
   } finally {
     bingInFlight.delete(cacheKey);
   }
+};
+
+const fetchUnsplashImage = async (query: string): Promise<string | null> => {
+  return `https://source.unsplash.com/featured/800x800/?${encodeURIComponent(query)}`;
+};
+
+export const fetchFallbackImageForQuery = async (query: string): Promise<string | null> => {
+  const bing = await fetchBingImage(query);
+  if (bing) return bing;
+  return fetchUnsplashImage(query);
 };
 
 export const generateConciergeInfo = async (
@@ -236,7 +254,7 @@ export const generatePostcardImage = async (
     style: TravelStyle
 ): Promise<string | null> => {
     if (!apiKey && !imageApiKey) {
-        return fetchBingImage(`${hotelName} ${location}`);
+        return fetchFallbackImageForQuery(`${hotelName} ${location}`);
     }
 
     try {
@@ -250,10 +268,10 @@ export const generatePostcardImage = async (
 
         const image = await generateImageFromPrompt(prompt);
         if (image) return image;
-        return await fetchBingImage(`${hotelName} ${location}`);
+        return await fetchFallbackImageForQuery(`${hotelName} ${location}`);
     } catch (error) {
         console.error("Postcard Gen Error:", error);
-        return await fetchBingImage(`${hotelName} ${location}`);
+        return await fetchFallbackImageForQuery(`${hotelName} ${location}`);
     }
 }
 
@@ -285,7 +303,7 @@ export const generateAvatar = async (style: TravelStyle): Promise<string | null>
 // "Nano Banana" - Attraction 3D Asset Generation
 export const generateAttractionImage = async (type: string, name: string): Promise<string | null> => {
     if (!apiKey && !imageApiKey) {
-        return fetchBingImage(`${name} ${type}`);
+        return fetchFallbackImageForQuery(`${name} ${type}`);
     }
 
     try {
@@ -301,10 +319,10 @@ export const generateAttractionImage = async (type: string, name: string): Promi
 
         const image = await generateImageFromPrompt(prompt);
         if (image) return image;
-        return await fetchBingImage(`${name} ${type}`);
+        return await fetchFallbackImageForQuery(`${name} ${type}`);
     } catch (error) {
         console.error("Attraction Image Gen Error:", error);
-        return await fetchBingImage(`${name} ${type}`);
+        return await fetchFallbackImageForQuery(`${name} ${type}`);
     }
 }
 
