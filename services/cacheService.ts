@@ -66,3 +66,37 @@ export const deleteImageCache = async (key: string): Promise<void> => {
     console.error('Image cache delete failed:', error);
   }
 };
+
+export const estimateLocalStorageBytes = (): number => {
+  try {
+    let total = 0;
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const value = localStorage.getItem(key) || '';
+      total += (key.length + value.length) * 2;
+    }
+    return total;
+  } catch {
+    return 0;
+  }
+};
+
+export const getImageCacheStats = async (): Promise<{ count: number; bytes: number }> => {
+  try {
+    const db = await openDb();
+    return await new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const values = request.result || [];
+        const bytes = values.reduce((sum: number, value: string) => sum + value.length * 2, 0);
+        resolve({ count: values.length, bytes });
+      };
+      request.onerror = () => resolve({ count: 0, bytes: 0 });
+    });
+  } catch {
+    return { count: 0, bytes: 0 };
+  }
+};
