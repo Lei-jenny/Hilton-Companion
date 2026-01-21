@@ -1,0 +1,19 @@
+/* Base document setup for Vite build output */
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background-color: #F7F7F5;
+}
+
+/* Subtle soft shadow used in cards */
+.shadow-soft {
+  box-shadow: 0 20px 60px -30px rgba(15, 23, 42, 0.35);
+}
+
+.hilton-outline {
+  box-shadow: 0 0 0 1px rgba(0, 87, 184, 0.15);
+}
