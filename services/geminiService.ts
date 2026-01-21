@@ -36,7 +36,7 @@ const getClient = () => {
 
 const extractImageFromResponse = (response: any): string | null => {
   const inlineData = response?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData)?.inlineData;
-  const imageBytes = inlineData?.data;
+  const imageBytes = inlineData?.data ? String(inlineData.data).replace(/\s+/g, '') : null;
   const mimeType = inlineData?.mimeType || 'image/png';
   if (imageBytes) {
     return `data:${mimeType};base64,${imageBytes}`;
@@ -47,8 +47,9 @@ const extractImageFromResponse = (response: any): string | null => {
 
   const directData = response?.images?.[0]?.data || response?.data?.[0]?.b64_json || response?.data?.[0];
   if (typeof directData === 'string') {
-    if (directData.startsWith('data:image/')) return directData;
-    return `data:image/png;base64,${directData}`;
+    const cleaned = directData.replace(/\s+/g, '');
+    if (cleaned.startsWith('data:image/')) return cleaned;
+    return `data:image/png;base64,${cleaned}`;
   }
 
   const part = response?.candidates?.[0]?.content?.parts?.find((p: any) => p?.inlineData?.data || p?.fileData?.fileUri);
@@ -59,6 +60,10 @@ const extractImageFromResponse = (response: any): string | null => {
   }
 
   return null;
+};
+
+export const fetchBingImageForQuery = async (query: string): Promise<string | null> => {
+  return fetchBingImage(query);
 };
 
 const generateImageFromPrompt = async (prompt: string): Promise<string | null> => {
