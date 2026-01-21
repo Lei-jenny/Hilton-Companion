@@ -108,7 +108,7 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
             </div>
             <button
                 onClick={handleShare}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 text-primary transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 text-primary transition-colors hilton-glow"
             >
                 <span className="material-symbols-outlined">ios_share</span>
             </button>
@@ -213,6 +213,7 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
                 <p className="text-slate-500 text-sm max-w-[260px] mx-auto leading-relaxed">
                     A personalized keepsake crafted by Hilton AI.
                 </p>
+                <div className="hilton-gold-divider w-20 mx-auto"></div>
             </div>
         </main>
 
@@ -227,7 +228,7 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
                      <span>{postcardImage ? 'Regenerate Image' : 'Generate Image'}</span>
                  </button>
                  <button
-                     className="relative group w-full h-12 overflow-hidden bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-3 shadow-xl transition-all active:scale-[0.98]"
+                     className="relative group w-full h-12 overflow-hidden bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-3 shadow-xl transition-all active:scale-[0.98] hilton-sheen"
                      onClick={handleSavePhoto}
                  >
                     <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
