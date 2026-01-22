@@ -62,16 +62,17 @@ const extractImageFromResponse = (response: any): string | null => {
   return null;
 };
 
-const generateImageFromPrompt = async (prompt: string): Promise<string | null> => {
+const generateImageFromPrompt = async (prompt: string, options?: { force?: boolean }): Promise<string | null> => {
   if (!imageApiKey) return null;
+  const force = Boolean(options?.force);
   const cacheKey = prompt.trim();
-  if (imageResultCache.has(cacheKey)) {
+  if (!force && imageResultCache.has(cacheKey)) {
     return imageResultCache.get(cacheKey) ?? null;
   }
   if (imageInFlight.has(cacheKey)) {
     return imageInFlight.get(cacheKey) ?? null;
   }
-  if (typeof sessionStorage !== 'undefined') {
+  if (!force && typeof sessionStorage !== 'undefined') {
     const requestKey = getRequestKey(cacheKey);
     if (sessionStorage.getItem(requestKey)) {
       return null;
@@ -251,7 +252,8 @@ export const generateSouvenirCaption = async (
 export const generatePostcardImage = async (
     hotelName: string,
     location: string,
-    style: TravelStyle
+    style: TravelStyle,
+    force?: boolean
 ): Promise<string | null> => {
     if (!apiKey && !imageApiKey) {
         return fetchFallbackImageForQuery(`${hotelName} ${location}`);
@@ -267,7 +269,7 @@ export const generatePostcardImage = async (
             No text, no illustration, no watermarks.
         `;
 
-        const image = await generateImageFromPrompt(prompt);
+        const image = await generateImageFromPrompt(prompt, { force });
         if (image) return image;
         return await fetchFallbackImageForQuery(`${hotelName} ${location}`);
     } catch (error) {
