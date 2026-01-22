@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { UserSession } from '../types';
-import { generateSouvenirCaption, generatePostcardImage } from '../services/geminiService';
+import { generateSouvenirCaption, generatePostcardImage, fetchFallbackImageForQuery } from '../services/geminiService';
 import { getImageCache, setImageCache } from '../services/cacheService';
 
 interface SouvenirStepProps {
@@ -14,6 +14,33 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const HILTON_LOGO = "https://www.hilton.com/modules/assets/svgs/logos/WW.svg";
   const hasFetchedRef = useRef(false);
+  const hasRetriedRef = useRef(false);
+
+  const validateImage = (src: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+  };
+
+  const fetchPostcardImage = async (force?: boolean) => {
+    const image = await generatePostcardImage(
+      session.booking.hotelName,
+      session.booking.location,
+      session.travelStyle,
+      force
+    );
+    if (image && await validateImage(image)) {
+      return image;
+    }
+    const fallback = await fetchFallbackImageForQuery(`${session.booking.hotelName} ${session.booking.location}`);
+    if (fallback && await validateImage(fallback)) {
+      return fallback;
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
@@ -28,10 +55,23 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
         const cachedImage = await getImageCache(imageKey);
         const failedFlag = localStorage.getItem(failedKey);
         if (cachedCaption) setCaption(cachedCaption);
-        if (cachedImage) setPostcardImage(cachedImage);
+        if (cachedImage) {
+            setPostcardImage(cachedImage);
+            setImageFailed(false);
+        }
         if (failedFlag && !cachedImage) setImageFailed(true);
         if (cachedCaption || cachedImage || failedFlag) {
             setLoading(false);
+            if (failedFlag && !cachedImage && !hasRetriedRef.current) {
+              hasRetriedRef.current = true;
+              const refreshed = await fetchPostcardImage();
+              if (refreshed) {
+                setPostcardImage(refreshed);
+                setImageFailed(false);
+                localStorage.removeItem(failedKey);
+                await setImageCache(imageKey, refreshed);
+              }
+            }
             return;
         }
 
@@ -52,17 +92,17 @@ const SouvenirStep: React.FC<SouvenirStepProps> = ({ session }) => {
     localStorage.removeItem(failedKey);
 
     try {
-      const image = await generatePostcardImage(session.booking.hotelName, session.booking.location, session.travelStyle);
-      const cacheBusted = image && !image.startsWith('data:')
-        ? `${image}${image.includes('?') ? '&' : '?'}cb=${Date.now()}`
-        : image;
-      setPostcardImage(cacheBusted);
-      if (cacheBusted) {
-        await setImageCache(imageKey, cacheBusted);
-      } else {
-        setImageFailed(true);
-        localStorage.setItem(failedKey, '1');
-      }
+    const image = await fetchPostcardImage(true);
+    const cacheBusted = image && !image.startsWith('data:')
+      ? `${image}${image.includes('?') ? '&' : '?'}cb=${Date.now()}`
+      : image;
+    setPostcardImage(cacheBusted);
+    if (cacheBusted) {
+      await setImageCache(imageKey, cacheBusted);
+    } else {
+      setImageFailed(true);
+      localStorage.setItem(failedKey, '1');
+    }
     } catch (error) {
       console.error('Postcard regenerate failed:', error);
       setImageFailed(true);
