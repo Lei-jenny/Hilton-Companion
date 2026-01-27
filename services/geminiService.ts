@@ -4,7 +4,7 @@ import { TravelStyle, Booking, Attraction } from "../types";
 let apiKey = '';
 let imageApiKey = '';
 let ai: GoogleGenAI | null = null;
-const IMAGE_API_URL = 'https://ai.juguang.chat/v1beta/models/gemini-2.5-flash-image-preview:generateContent';
+const IMAGE_API_URL = 'https://ai.juguang.chat/v1beta/models/gemini-2.5-flash-image:generateContent';
 const imageInFlight = new Map<string, Promise<string | null>>();
 const imageResultCache = new Map<string, string | null>();
 const bingInFlight = new Map<string, Promise<string | null>>();
