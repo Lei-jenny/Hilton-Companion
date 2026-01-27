@@ -72,19 +72,17 @@ const App: React.FC = () => {
          <div className="absolute inset-0 bg-black/40 mix-blend-overlay"></div>
       </div>
 
-      <div className="absolute top-4 right-4 z-20 w-[92%] max-w-sm sm:w-auto">
-        <button
-          onClick={() => setIsKeyModalOpen(true)}
-          className="bg-white/90 backdrop-blur-md border border-white/50 rounded-full px-3 py-2 shadow-lg text-[10px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2"
-        >
-          <span>API Keys</span>
-          <span className={apiKeySaved && imageApiKeySaved ? 'text-green-600' : 'text-amber-600'}>
-            {apiKeySaved && imageApiKeySaved ? 'Saved' : 'Not set'}
-          </span>
-        </button>
-      </div>
+      
 
       {renderStep()}
+
+      <button
+        onClick={() => setIsKeyModalOpen(true)}
+        className="absolute bottom-4 right-4 z-20 bg-white/80 backdrop-blur-md border border-white/50 rounded-full w-9 h-9 shadow-lg text-slate-600 flex items-center justify-center"
+        title="Edit API Keys"
+      >
+        <span className="material-symbols-outlined text-base">key</span>
+      </button>
 
       {isKeyModalOpen && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 px-4">
@@ -119,6 +117,16 @@ const App: React.FC = () => {
                   const imageKey = imageApiKeyInput.trim();
                   setGeminiApiKey(key);
                   setImageApiKey(imageKey);
+                  if (key) {
+                    localStorage.setItem('GEMINI_API_KEY', key);
+                  } else {
+                    localStorage.removeItem('GEMINI_API_KEY');
+                  }
+                  if (imageKey) {
+                    localStorage.setItem('IMAGE_API_KEY', imageKey);
+                  } else {
+                    localStorage.removeItem('IMAGE_API_KEY');
+                  }
                   setApiKeySaved(!!key);
                   setImageApiKeySaved(!!imageKey);
                   setIsKeyModalOpen(false);
