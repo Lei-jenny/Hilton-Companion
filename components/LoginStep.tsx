@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { TravelStyle, Booking, TripStatus, UserSession } from '../types';
 import { validateUser, getTripStatus, PRESET_AVATARS, MOCK_BOOKINGS } from '../services/mockService';
-import { generateAvatar } from '../services/geminiService';
+import { generateAvatar, setGeminiApiKey, setImageApiKey } from '../services/geminiService';
+import { getImageCache, setImageCache } from '../services/cacheService';
 
 interface LoginStepProps {
   onLoginSuccess: (session: UserSession) => void;
@@ -12,6 +13,8 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
   const [lastName, setLastName] = useState('Anderson'); // Name field restored
   const [selectedStyle, setSelectedStyle] = useState<TravelStyle>(TravelStyle.SOLO);
   const [error, setError] = useState('');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [imageApiKeyInput, setImageApiKeyInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [bookingData, setBookingData] = useState<Booking | null>(null);
@@ -20,6 +23,10 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
   // Phase 1: Authentication
   const handleFindBooking = () => {
     setError('');
+    if (!apiKeyInput.trim()) {
+        setError('Please enter your Gemini API key to continue.');
+        return;
+    }
     if (!lastName.trim()) {
         setError('Please enter your name.');
         return;
@@ -44,7 +51,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
   const handleGenerateAIAvatar = async () => {
     setIsGenerating(true);
     const cacheKey = `guest-companion:avatar:${selectedStyle.toLowerCase()}`;
-    const cached = localStorage.getItem(cacheKey);
+    const cached = await getImageCache(cacheKey);
     if (cached) {
       setAvatar(cached);
       setIsGenerating(false);
@@ -59,7 +66,7 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
     const aiAvatar = await generateAvatar(selectedStyle);
     if (aiAvatar) {
         setAvatar(aiAvatar);
-        localStorage.setItem(cacheKey, aiAvatar);
+        await setImageCache(cacheKey, aiAvatar);
     } else {
         setError("Could not generate AI avatar. Please select a preset.");
     }
@@ -197,6 +204,50 @@ const LoginStep: React.FC<LoginStepProps> = ({ onLoginSuccess }) => {
         </div>
 
         <div className="space-y-5 mb-8">
+          <div className="group relative">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-medium-gray mb-1.5 ml-1">
+              Gemini API Key
+            </label>
+            <div className="relative flex items-center">
+              <span className="material-symbols-outlined absolute left-4 text-slate-400">vpn_key</span>
+              <input 
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setApiKeyInput(value);
+                  setGeminiApiKey(value);
+                }}
+                className="w-full pl-11 pr-4 py-3.5 bg-light-gray border border-slate-200 rounded-xl text-charcoal focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                placeholder="Paste your Gemini API key"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <p className="text-[10px] text-medium-gray mt-1 ml-1">Key is only used for this session.</p>
+          </div>
+          <div className="group relative">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-medium-gray mb-1.5 ml-1">
+              Image API Key
+            </label>
+            <div className="relative flex items-center">
+              <span className="material-symbols-outlined absolute left-4 text-slate-400">image</span>
+              <input 
+                type="password"
+                value={imageApiKeyInput}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setImageApiKeyInput(value);
+                  setImageApiKey(value);
+                }}
+                className="w-full pl-11 pr-4 py-3.5 bg-light-gray border border-slate-200 rounded-xl text-charcoal focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                placeholder="Paste your image API key"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <p className="text-[10px] text-medium-gray mt-1 ml-1">Used for image generation requests.</p>
+          </div>
           <div className="group relative">
             <label className="block text-xs font-semibold uppercase tracking-wider text-medium-gray mb-1.5 ml-1">
               Order ID
